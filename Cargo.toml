@@ -1,5 +1,5 @@
 [workspace]
-members = ["modules/pubsub"]
+members = [ "libraries/entities", "modules/portscan","libraries/pubsub"]
 
 [package]
 name = "netscan"
@@ -8,11 +8,20 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [workspace.dependencies]
-pubsub = {path="modules/pubsub"}
-tokio = {version="1", features=["macros", "rt-multi-thread"]}
+pubsub = {path="libraries/pubsub"}
+entities = {path="libraries/entities"}
+portscan = {path="modules/portscan"}
+tokio = {version="1", features=["macros", "rt-multi-thread", "net"]}
 thiserror = "1.0.56"
+bincode = "1.3.3"
+serde = { version = "1.0.195", features = ["serde_derive"] }
+log = "0.4.20"
+anyhow = "1.0.79"
 
 
 [dependencies]
 tokio.workspace = true
 pubsub.workspace = true
+pretty_env_logger = "0.5.0"
+log.workspace = true
+portscan.workspace = true

@@ -26,12 +26,17 @@ pub mod interface {
     #[derive(PartialEq, Eq, Hash)]
     pub enum Event {
         Log,
+        Scan,
         PortIdentified,
         ServiceIdentified,
     }
 
-    pub const MSG_VARIANTS: [Event; 3] =
-        [Event::Log, Event::PortIdentified, Event::ServiceIdentified];
+    pub const MSG_VARIANTS: [Event; 4] = [
+        Event::Log,
+        Event::Scan,
+        Event::PortIdentified,
+        Event::ServiceIdentified,
+    ];
 
     #[derive(thiserror::Error, Debug)]
     pub enum Error {
@@ -75,6 +80,11 @@ impl PubSub {
             senders.insert(event, Publisher::new(interface::PUBLISHER_SIZE));
         }
         Self { senders }
+    }
+}
+impl Default for PubSub {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
