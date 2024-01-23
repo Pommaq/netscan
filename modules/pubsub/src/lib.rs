@@ -1,4 +1,4 @@
-/* 
+/*
     Events are identified using a string?
     Registered events are used as keys in map, which maps to vector of write interfaces where we write Event information or something
 
@@ -15,7 +15,6 @@ use std::collections::HashMap;
 
 use interface::{Event, PubSubInterface, Publisher, Subscriber};
 
-
 /// Defines traits and structs for publishing/subscribing to data
 pub mod interface {
     use tokio::sync::broadcast::{error::SendError, Receiver, Sender};
@@ -26,25 +25,25 @@ pub mod interface {
 
     #[derive(PartialEq, Eq, Hash)]
     pub enum Event {
+        Log,
         PortIdentified,
         ServiceIdentified,
     }
 
-    pub const MSG_VARIANTS: [Event;2] = [Event::PortIdentified, Event::ServiceIdentified];
+    pub const MSG_VARIANTS: [Event; 3] =
+        [Event::Log, Event::PortIdentified, Event::ServiceIdentified];
 
     #[derive(thiserror::Error, Debug)]
     pub enum Error {
         #[error("Unable to publish event")]
-        PublishError(#[from] SendError<Vec<u8>>)
+        PublishError(#[from] SendError<Vec<u8>>),
     }
 
     pub trait PubSubInterface {
         fn subscribe(&self, event: Event) -> Result<Subscriber, Error>;
-        fn publish(&self, event:Event, payload: &[u8]) -> Result<(), Error>;
+        fn publish(&self, event: Event, payload: &[u8]) -> Result<(), Error>;
     }
 }
-
-
 
 pub struct PubSub {
     senders: HashMap<Event, Publisher>,
@@ -52,12 +51,19 @@ pub struct PubSub {
 
 impl PubSubInterface for PubSub {
     fn subscribe(&self, event: Event) -> Result<Subscriber, interface::Error> {
-        let r = self.senders.get(&event).expect("No such event registered").subscribe();
+        let r = self
+            .senders
+            .get(&event)
+            .expect("No such event registered")
+            .subscribe();
         Ok(r)
     }
 
-    fn publish(&self,event: Event, payload: &[u8]) -> Result<(), interface::Error> {
-        self.senders.get(&event).expect("No such event registered").send(payload.to_vec())?;
+    fn publish(&self, event: Event, payload: &[u8]) -> Result<(), interface::Error> {
+        self.senders
+            .get(&event)
+            .expect("No such event registered")
+            .send(payload.to_vec())?;
         Ok(())
     }
 }
@@ -67,8 +73,34 @@ impl PubSub {
         let mut senders = HashMap::new();
         for event in interface::MSG_VARIANTS {
             senders.insert(event, Publisher::new(interface::PUBLISHER_SIZE));
-            
         }
-        Self{senders}
+        Self { senders }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::interface::{Event, PubSubInterface};
+    use crate::PubSub;
+
+    pub async fn entrypoint<T: PubSubInterface>(handle: &T) {
+        let mut int = handle.subscribe(Event::Log).unwrap();
+
+        let data = int.recv().await.unwrap();
+        assert_eq!(data, b"message published")
+    }
+
+    pub async fn entrypoint2<T: PubSubInterface>(handle: &T) {
+        handle.publish(Event::Log, b"message published").unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_interface() {
+        let handle = PubSub::new();
+
+        let dummy1 = entrypoint(&handle);
+        let dummy2 = entrypoint2(&handle);
+
+        tokio::join!(dummy1, dummy2);
     }
 }
