@@ -1,7 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use anyhow::Context;
-use entities::portscan;
+use entities::{filter, portscan};
 use pubsub::interface::{Event, PubSubInterface};
 use tokio::{net::TcpStream, time};
 
@@ -12,8 +12,10 @@ pub async fn entrypoint<T: PubSubInterface>(handle: Arc<T>) -> anyhow::Result<()
         .subscribe(Event::Scan)
         .context("unable to subscribe :(")?;
 
+    
     while let Ok(raw) = scans.recv().await {
-        let addr: portscan::Address = entities::deserialize(&raw)?;
+        let addr: portscan::Address = entities::deserialize(&filter::unwrap(&raw)?)?;
+
         for port in addr.ports {
             log::info!("Starting scan of {}:{}", addr.addr, port);
 
@@ -26,7 +28,7 @@ pub async fn entrypoint<T: PubSubInterface>(handle: Arc<T>) -> anyhow::Result<()
                 Ok(_) => {
                     log::info!("Port {}:{} is open", addr.addr, port);
                     let serialized = entities::serialize(&portscan::Port::new(port))?;
-                    handle.publish(Event::PortOpen, &serialized)?;
+                    handle.publish(Event::PortOpen,b"tcp",  &serialized)?;
                 }
                 Err(_) => {
                     log::debug!("Port {}:{} is closed", addr.addr, port);

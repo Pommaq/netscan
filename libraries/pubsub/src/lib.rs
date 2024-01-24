@@ -13,7 +13,8 @@
 
 use std::collections::HashMap;
 
-use interface::{Event, PubSubInterface, Publisher, Subscriber};
+use entities::filter::Wrapper;
+use interface::{Event, Filter, PubSubInterface, Publisher, Subscriber};
 
 /// Defines traits and structs for publishing/subscribing to data
 pub mod interface;
@@ -32,13 +33,27 @@ impl PubSubInterface for PubSub {
         Ok(r)
     }
 
-    fn publish(&self, event: Event, payload: &[u8]) -> Result<(), interface::Error> {
+    fn publish(&self, event: Event,key: &[u8], payload: &[u8]) -> Result<(), interface::Error> {
+        let wrap = Wrapper::new(key, payload);
+        let ser = entities::serialize(&wrap)?;
+
         self.senders
             .get(&event)
             .expect("No such event registered")
-            .send(payload.to_vec())?;
+            .send(ser)?;
         Ok(())
     }
+
+    fn filtered(&self, event:Event, callback: fn(&entities::filter::Wrapper) -> bool) -> Result<interface::Filter, interface::Error>  {
+        let r = self
+        .senders
+        .get(&event)
+        .expect("No such event registered")
+        .subscribe();
+        Ok(Filter::new(r, callback))
+    }
+
+    
 }
 
 impl PubSub {
@@ -58,18 +73,21 @@ impl Default for PubSub {
 
 #[cfg(test)]
 mod tests {
+    use entities::filter::Wrapper;
+
     use crate::interface::{Event, PubSubInterface};
     use crate::PubSub;
 
     pub async fn entrypoint<T: PubSubInterface>(handle: &T) {
         let mut int = handle.subscribe(Event::Log).unwrap();
-
         let data = int.recv().await.unwrap();
-        assert_eq!(data, b"message published")
+        let wrap: Wrapper = entities::deserialize(&data).unwrap();
+        assert_eq!(wrap.key, b"aaa");
+        assert_eq!(wrap.value, b"message published")
     }
 
     pub async fn entrypoint2<T: PubSubInterface>(handle: &T) {
-        handle.publish(Event::Log, b"message published").unwrap();
+        handle.publish(Event::Log,b"aaa", b"message published").unwrap();
     }
 
     #[tokio::test]

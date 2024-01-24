@@ -10,6 +10,7 @@ pub async fn wrapper<T: Future<Output = anyhow::Result<()>>>(
     timeout: Duration,
     cancellation: CancellationToken,
     module: T,
+    identifier: &str,
 ) {
     let res = time::timeout(timeout, module);
 
@@ -23,15 +24,16 @@ pub async fn wrapper<T: Future<Output = anyhow::Result<()>>>(
             match result {
                 Ok(returned_status) => {
                     match returned_status {
-                        Ok(_) => log::info!("Module finished successfully"),
-                        Err(err) => log::error!("Module exited with an error: {}", err),
+                        Ok(_) => log::info!("Module {} finished successfully", identifier),
+                        Err(err) => log::error!("Module {} exited with an error: {}",identifier, err),
                     };
                 },
                 Err(elapsed) => {
                     // We timed out
-                    log::error!("Module timed out. Elapsed: {}", elapsed);
+                    log::error!("Module {} timed out. Elapsed: {}", identifier, elapsed);
                 }
             }
         }
     };
+    log::debug!("initiator exiting");
 }

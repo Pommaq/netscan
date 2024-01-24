@@ -448,7 +448,6 @@ name = "netscan"
 version = "0.1.0"
 dependencies = [
  "chrono",
- "clap",
  "entities",
  "log",
  "portscan",
@@ -612,6 +611,7 @@ name = "scaninit"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "clap",
  "entities",
  "log",
  "pubsub",

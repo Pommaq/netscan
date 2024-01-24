@@ -57,9 +57,6 @@ impl Filter {
 
 pub trait PubSubInterface {
     fn subscribe(&self, event: Event) -> Result<Subscriber, Error>;
-    fn publish(&self, event: Event, payload: &[u8]) -> Result<(), Error>;
-    fn filtered(&self, event:Event, callback: fn(&Wrapper) -> bool) -> Result<Filter, Error> {
-        let sauce = self.subscribe(event)?;
-        Ok(Filter::new(sauce, callback))
-    }
+    fn publish(&self, event: Event,key: &[u8], payload: &[u8]) -> Result<(), Error>;
+    fn filtered(&self, event:Event, callback: fn(&Wrapper) -> bool) -> Result<Filter, Error>;
 }

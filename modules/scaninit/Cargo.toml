@@ -10,3 +10,4 @@ entities.workspace = true
 pubsub.workspace = true
 log.workspace = true
 anyhow.workspace = true
+clap.workspace = true
