@@ -8,7 +8,10 @@ pub struct Address {
 }
 impl Address {
     pub fn new(addr: &str, port: u16) -> Self {
-        Self{addr: addr.to_string(), port}
+        Self {
+            addr: addr.to_string(),
+            port,
+        }
     }
 }
 #[derive(Serialize, Deserialize)]

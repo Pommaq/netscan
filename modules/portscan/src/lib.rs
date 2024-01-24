@@ -1,9 +1,14 @@
+use std::sync::Arc;
+
 use anyhow::Context;
-use entities::portscan;
+use entities::{arguments::Argument, portscan};
 use pubsub::interface::{Event, PubSubInterface};
 use tokio::net::TcpStream;
 
-pub async fn entrypoint<T: PubSubInterface>(handle: &T) -> anyhow::Result<()> {
+pub async fn entrypoint<T: PubSubInterface>(
+    handle: Arc<T>,
+    _arguments: Argument,
+) -> anyhow::Result<()> {
     let mut scans = handle
         .subscribe(Event::Scan)
         .context("unable to subscribe :(")?;
@@ -20,8 +25,10 @@ pub async fn entrypoint<T: PubSubInterface>(handle: &T) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn dummy_scan<T: PubSubInterface>(handle: &T) -> anyhow::Result<()> {
-    
+pub async fn dummy_scan<T: PubSubInterface>(
+    handle: Arc<T>,
+    _arguments: Argument,
+) -> anyhow::Result<()> {
     let ser = portscan::serialize(&portscan::Address::new("google.com", 443))?;
     log::info!("Ordering scan of google :)");
     handle.publish(Event::Scan, &ser)?;
@@ -29,13 +36,16 @@ pub async fn dummy_scan<T: PubSubInterface>(handle: &T) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn dummy_service<T: PubSubInterface>(handle: &T) -> anyhow::Result<()> {
+pub async fn dummy_service<T: PubSubInterface>(
+    handle: Arc<T>,
+    _arguments: Argument,
+) -> anyhow::Result<()> {
     let mut sub = handle.subscribe(Event::PortIdentified)?;
 
     let raw = sub.recv().await?;
     let res: portscan::Port = portscan::deserialize(&raw)?;
 
-    log::info!("Port {} is open", res.port );
+    log::info!("Port {} is open", res.port);
 
     Ok(())
 }
