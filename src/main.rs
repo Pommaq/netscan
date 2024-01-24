@@ -1,7 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
 use clap::Parser;
-use entities::arguments::Argument;
 use pubsub::PubSub;
 use tokio::signal;
 use tokio_util::{sync::CancellationToken, task::TaskTracker};
@@ -31,24 +30,16 @@ async fn main() {
     let porscanner = scheduler::wrapper(
         max_timeout,
         cancellation.clone(),
-        portscan::entrypoint(handle.clone(), Argument::Test),
+        portscan::entrypoint(handle.clone()),
     );
-
-    let dummyscan = scheduler::wrapper(
+    let initiator = scheduler::wrapper(
         max_timeout,
         cancellation.clone(),
-        portscan::dummy_scan(handle.clone(), Argument::Portscan(args.start, args.end)),
-    );
-
-    let dummyservice = scheduler::wrapper(
-        max_timeout,
-        cancellation.clone(),
-        portscan::dummy_service(handle.clone(), Argument::Test),
+        scaninit::scaninitiator(handle.clone()),
     );
 
     tracker.spawn(porscanner);
-    tracker.spawn(dummyscan);
-    tracker.spawn(dummyservice);
+    tracker.spawn(initiator);
     tracker.close();
 
     tokio::select! {

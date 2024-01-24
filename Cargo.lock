@@ -454,6 +454,7 @@ dependencies = [
  "portscan",
  "pretty_env_logger",
  "pubsub",
+ "scaninit",
  "scheduler",
  "tokio",
  "tokio-util",
@@ -540,6 +541,7 @@ dependencies = [
 name = "pubsub"
 version = "0.1.0"
 dependencies = [
+ "entities",
  "thiserror",
  "tokio",
 ]
@@ -583,6 +585,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08c74e62047bb2de4ff487b251e4a92e24f48745648451635cec7d591162d9f"
 
 [[package]]
+name = "reporting"
+version = "0.1.0"
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -599,6 +605,16 @@ dependencies = [
  "libc",
  "linux-raw-sys",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "scaninit"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "entities",
+ "log",
+ "pubsub",
 ]
 
 [[package]]

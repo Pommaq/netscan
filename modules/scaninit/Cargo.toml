@@ -1,11 +1,12 @@
 [package]
-name = "pubsub"
+name = "scaninit"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio={workspace=true, features=["sync", "macros", "sync"]}
-thiserror={workspace=true}
-entities.workspace=true
+entities.workspace = true
+pubsub.workspace = true
+log.workspace = true
+anyhow.workspace = true

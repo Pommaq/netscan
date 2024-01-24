@@ -16,39 +16,7 @@ use std::collections::HashMap;
 use interface::{Event, PubSubInterface, Publisher, Subscriber};
 
 /// Defines traits and structs for publishing/subscribing to data
-pub mod interface {
-    use tokio::sync::broadcast::{error::SendError, Receiver, Sender};
-
-    pub type Subscriber = Receiver<Vec<u8>>;
-    pub const PUBLISHER_SIZE: usize = 1337;
-    pub(crate) type Publisher = Sender<Vec<u8>>;
-
-    #[derive(PartialEq, Eq, Hash)]
-    pub enum Event {
-        Log,
-        Scan,
-        PortIdentified,
-        ServiceIdentified,
-    }
-
-    pub const MSG_VARIANTS: [Event; 4] = [
-        Event::Log,
-        Event::Scan,
-        Event::PortIdentified,
-        Event::ServiceIdentified,
-    ];
-
-    #[derive(thiserror::Error, Debug)]
-    pub enum Error {
-        #[error("Unable to publish event")]
-        PublishError(#[from] SendError<Vec<u8>>),
-    }
-
-    pub trait PubSubInterface {
-        fn subscribe(&self, event: Event) -> Result<Subscriber, Error>;
-        fn publish(&self, event: Event, payload: &[u8]) -> Result<(), Error>;
-    }
-}
+pub mod interface;
 
 pub struct PubSub {
     senders: HashMap<Event, Publisher>,
