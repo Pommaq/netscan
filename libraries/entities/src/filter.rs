@@ -1,4 +1,3 @@
-
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Wrapper {
     pub key: Vec<u8>,
@@ -6,7 +5,10 @@ pub struct Wrapper {
 }
 impl Wrapper {
     pub fn new(key: &[u8], value: &[u8]) -> Self {
-        Self {key: key.to_vec(), value: value.to_vec()}
+        Self {
+            key: key.to_vec(),
+            value: value.to_vec(),
+        }
     }
 }
 /// Remove the wrapper from the byte input. Useful for subscriptions where we dont care about the key
@@ -24,7 +26,7 @@ mod tests {
         const PAYLOAD: &[u8] = b"aaaaa";
         let wrap = Wrapper::new(b"BOGUS", PAYLOAD);
         let serialized = bincode::serialize(&wrap).unwrap();
-        let deserialized : Vec<u8>= unwrap(&serialized).unwrap();
+        let deserialized: Vec<u8> = unwrap(&serialized).unwrap();
         assert_eq!(PAYLOAD, deserialized);
     }
 }

@@ -33,7 +33,7 @@ impl PubSubInterface for PubSub {
         Ok(r)
     }
 
-    fn publish(&self, event: Event,key: &[u8], payload: &[u8]) -> Result<(), interface::Error> {
+    fn publish(&self, event: Event, key: &[u8], payload: &[u8]) -> Result<(), interface::Error> {
         let wrap = Wrapper::new(key, payload);
         let ser = entities::serialize(&wrap)?;
 
@@ -44,16 +44,18 @@ impl PubSubInterface for PubSub {
         Ok(())
     }
 
-    fn filtered(&self, event:Event, callback: fn(&entities::filter::Wrapper) -> bool) -> Result<interface::Filter, interface::Error>  {
+    fn filtered(
+        &self,
+        event: Event,
+        callback: fn(&entities::filter::Wrapper) -> bool,
+    ) -> Result<interface::Filter, interface::Error> {
         let r = self
-        .senders
-        .get(&event)
-        .expect("No such event registered")
-        .subscribe();
+            .senders
+            .get(&event)
+            .expect("No such event registered")
+            .subscribe();
         Ok(Filter::new(r, callback))
     }
-
-    
 }
 
 impl PubSub {
@@ -87,7 +89,9 @@ mod tests {
     }
 
     pub async fn entrypoint2<T: PubSubInterface>(handle: &T) {
-        handle.publish(Event::Log,b"aaa", b"message published").unwrap();
+        handle
+            .publish(Event::Log, b"aaa", b"message published")
+            .unwrap();
     }
 
     #[tokio::test]

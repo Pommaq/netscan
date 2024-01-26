@@ -4,7 +4,6 @@ use pubsub::PubSub;
 use tokio::signal;
 use tokio_util::{sync::CancellationToken, task::TaskTracker};
 
-
 #[tokio::main]
 async fn main() {
     pretty_env_logger::init_timed();
@@ -16,8 +15,6 @@ async fn main() {
     let cancellation = CancellationToken::new();
 
     let tracker = TaskTracker::new();
-
-
 
     let porscanner = scheduler::wrapper(
         max_timeout,

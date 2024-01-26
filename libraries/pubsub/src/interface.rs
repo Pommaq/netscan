@@ -28,7 +28,7 @@ pub enum Error {
     Empty,
 
     #[error("unable to decode contents")]
-    Decode(#[from] entities::Error)
+    Decode(#[from] entities::Error),
 }
 
 pub struct Filter {
@@ -37,17 +37,19 @@ pub struct Filter {
 }
 
 impl Filter {
-    pub fn new(source: Subscriber, req: fn(&Wrapper)->bool) -> Self {
-        Self{internal: source, req}
+    pub fn new(source: Subscriber, req: fn(&Wrapper) -> bool) -> Self {
+        Self {
+            internal: source,
+            req,
+        }
     }
 
     pub async fn next(&mut self) -> Result<Vec<u8>, Error> {
-
         while let Ok(val) = self.internal.recv().await {
             let wrap: Wrapper = entities::deserialize(&val)?;
 
             if (self.req)(&wrap) {
-                return Ok(wrap.value)
+                return Ok(wrap.value);
             }
         }
 
@@ -57,6 +59,6 @@ impl Filter {
 
 pub trait PubSubInterface {
     fn subscribe(&self, event: Event) -> Result<Subscriber, Error>;
-    fn publish(&self, event: Event,key: &[u8], payload: &[u8]) -> Result<(), Error>;
-    fn filtered(&self, event:Event, callback: fn(&Wrapper) -> bool) -> Result<Filter, Error>;
+    fn publish(&self, event: Event, key: &[u8], payload: &[u8]) -> Result<(), Error>;
+    fn filtered(&self, event: Event, callback: fn(&Wrapper) -> bool) -> Result<Filter, Error>;
 }
