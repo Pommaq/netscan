@@ -1,18 +1,21 @@
 use std::{sync::Arc, time::Duration};
+use std::future::Future;
 
 use anyhow::Context;
 use entities::{filter, portscan};
-use pubsub::interface::{Event, PubSubInterface};
+use pubsub::interface::{Event, PubSubInterface, Subscriber};
 use tokio::{net::TcpStream, time};
 
 const TIMEOUT: u64 = 2;
 
-pub async fn entrypoint<T: PubSubInterface>(handle: Arc<T>) -> anyhow::Result<()> {
-    let mut scans = handle
-        .subscribe(Event::Scan)
-        .context("unable to subscribe :(")?;
+/// Register the stuff we're listening for. One should not subscribe to entries inside the callback
+/// since it could cause race conditions...
+pub fn register<T: PubSubInterface>(handle: Arc<T>) -> anyhow::Result<impl Future<Output=anyhow::Result<()>>> {
+    let scans = handle.subscribe(Event::Scan).context("unable to subscribe to scans :(")?;
+    Ok(entrypoint(handle, scans))
+}
 
-    
+async fn entrypoint<T: PubSubInterface>(handle: Arc<T>, mut scans: Subscriber) -> anyhow::Result<()> {
     while let Ok(raw) = scans.recv().await {
         let addr: portscan::Address = entities::deserialize(&filter::unwrap(&raw)?)?;
 

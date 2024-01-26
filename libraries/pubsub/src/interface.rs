@@ -44,7 +44,7 @@ impl Filter {
     pub async fn next(&mut self) -> Result<Vec<u8>, Error> {
 
         while let Ok(val) = self.internal.recv().await {
-            let wrap: entities::filter::Wrapper = entities::deserialize(&val)?;
+            let wrap: Wrapper = entities::deserialize(&val)?;
 
             if (self.req)(&wrap) {
                 return Ok(wrap.value)

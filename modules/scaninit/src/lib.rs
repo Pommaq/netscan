@@ -1,3 +1,4 @@
+use std::future::Future;
 /// This crate is used for parsing arguments and propagating them to other services. i.e. this starts the entire scan process
 use std::sync::Arc;
 
@@ -13,8 +14,14 @@ struct Args {
     pub end: u16,
 }
 
+/// Register the stuff we're listening for. One should not subscribe to entries inside the callback
+/// since it could cause race conditions...
+pub fn register<T: PubSubInterface>(handle: Arc<T>) -> Result<impl Future<Output=anyhow::Result<()>>, pubsub::interface::Error> {
+    // We dont need to do much here, yet... But let's stay consistent to our implementation
+    Ok(scaninitiator(handle))
+}
 
-pub async fn scaninitiator<T: PubSubInterface>(handle: Arc<T>) -> anyhow::Result<()> {
+async fn scaninitiator<T: PubSubInterface>(handle: Arc<T>) -> anyhow::Result<()> {
 
     let args = Args::parse();
     // initialize a portscan of google.com for now until I figure out how we can take arguments in a neat way

@@ -17,16 +17,18 @@ async fn main() {
 
     let tracker = TaskTracker::new();
 
+
+
     let porscanner = scheduler::wrapper(
         max_timeout,
         cancellation.clone(),
-        portscan::entrypoint(handle.clone()),
+        portscan::register(handle.clone()).unwrap(),
         "Portscan",
     );
     let initiator = scheduler::wrapper(
         max_timeout,
         cancellation.clone(),
-        scaninit::scaninitiator(handle.clone()),
+        scaninit::register(handle.clone()).unwrap(),
         "Scaninit",
     );
 
