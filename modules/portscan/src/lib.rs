@@ -14,7 +14,7 @@ pub fn register<T: PubSubInterface>(
     handle: Arc<T>,
 ) -> anyhow::Result<impl Future<Output = anyhow::Result<()>>> {
     let scans = handle
-        .subscribe(Event::Scan)
+        .subscribe(Event::Scan, None)
         .context("unable to subscribe to scans :(")?;
     Ok(entrypoint(handle, scans))
 }

@@ -8,4 +8,4 @@ edition = "2021"
 [dependencies]
 tokio={workspace=true, features=["sync", "macros", "sync"]}
 thiserror={workspace=true}
-entities.workspace=true
+log.workspace = true

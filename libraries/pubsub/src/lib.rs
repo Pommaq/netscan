@@ -1,70 +1,51 @@
-/*
-    Events are identified using a string?
-    Registered events are used as keys in map, which maps to vector of write interfaces where we write Event information or something
-
-
-    Register functions returns list of tuples, where it's (key, interface).
-    key can be an enum, or a string. Strings allow more decoupling but have an issue where people can misspell
-
-    Each interface is of type Write<Vec<u8>>?
-        * Allows interfaces to json/protobuf serialize the contents when writing a message. Readers then decode it
-
-*/
-
-use std::collections::HashMap;
-
-use entities::filter::Wrapper;
-use interface::{Event, Filter, PubSubInterface, Publisher, Subscriber};
+use interface::{Event,  PubSubInterface, Publisher, Subscriber};
 
 /// Defines traits and structs for publishing/subscribing to data
 pub mod interface;
 
+struct Grouping {
+    event: Event,
+    key: Option<Vec<u8>>,
+    publisher: Publisher,
+}
 pub struct PubSub {
-    senders: HashMap<Event, Publisher>,
+    senders: Vec<Grouping>,
 }
 
 impl PubSubInterface for PubSub {
-    fn subscribe(&self, event: Event) -> Result<Subscriber, interface::Error> {
-        let r = self
-            .senders
-            .get(&event)
-            .expect("No such event registered")
-            .subscribe();
+    fn subscribe(&mut self, event: Event, key: Option<&[u8]>) -> Result<Subscriber, interface::Error> {
+        // Ensure we only do one memory allocation
+        let allocd: Option<Vec<u8>> = key.map(|x| x.to_vec());
+        let r = if let Some(x) = self.senders.iter().find(|x|{
+            x.event == event && if key.is_some() {x.key == allocd} else {true}
+        }) {
+            x.publisher.subscribe()
+        } else {
+            let publisher = Publisher::new(interface::PUBLISHER_SIZE);
+            let receiver = publisher.subscribe();
+            self.senders.push(Grouping{event, key: allocd, publisher });
+            receiver
+        };
+
         Ok(r)
     }
 
     fn publish(&self, event: Event, key: &[u8], payload: &[u8]) -> Result<(), interface::Error> {
-        let wrap = Wrapper::new(key, payload);
-        let ser = entities::serialize(&wrap)?;
+        if let Some(publish) = self.senders.iter().find(|x|{
+            x.event == event && if let Some(val) = &x.key { val == key} else{true}
+        }) {
+            publish.publisher.send(payload.into())?;
+        } else {
+            log::debug!("Event {:?} with key: {:?} has no subscribers", event, key);
+        }
 
-        self.senders
-            .get(&event)
-            .expect("No such event registered")
-            .send(ser)?;
         Ok(())
-    }
-
-    fn filtered(
-        &self,
-        event: Event,
-        callback: fn(&entities::filter::Wrapper) -> bool,
-    ) -> Result<interface::Filter, interface::Error> {
-        let r = self
-            .senders
-            .get(&event)
-            .expect("No such event registered")
-            .subscribe();
-        Ok(Filter::new(r, callback))
     }
 }
 
 impl PubSub {
     pub fn new() -> Self {
-        let mut senders = HashMap::new();
-        for event in interface::MSG_VARIANTS {
-            senders.insert(event, Publisher::new(interface::PUBLISHER_SIZE));
-        }
-        Self { senders }
+        Self { senders: vec![] }
     }
 }
 impl Default for PubSub {
@@ -75,32 +56,42 @@ impl Default for PubSub {
 
 #[cfg(test)]
 mod tests {
-    use entities::filter::Wrapper;
-
     use crate::interface::{Event, PubSubInterface};
     use crate::PubSub;
 
-    pub async fn entrypoint<T: PubSubInterface>(handle: &T) {
-        let mut int = handle.subscribe(Event::Log).unwrap();
-        let data = int.recv().await.unwrap();
-        let wrap: Wrapper = entities::deserialize(&data).unwrap();
-        assert_eq!(wrap.key, b"aaa");
-        assert_eq!(wrap.value, b"message published")
-    }
-
-    pub async fn entrypoint2<T: PubSubInterface>(handle: &T) {
-        handle
-            .publish(Event::Log, b"aaa", b"message published")
-            .unwrap();
-    }
 
     #[tokio::test]
     async fn test_interface() {
-        let handle = PubSub::new();
+        let mut handle = PubSub::new();
+        let mut int = handle.subscribe(Event::Log, None).unwrap();
 
-        let dummy1 = entrypoint(&handle);
-        let dummy2 = entrypoint2(&handle);
+        handle
+            .publish(Event::Log, b"aaa", b"message published")
+            .unwrap();
+        let data = int.recv().await.unwrap();
+        assert_eq!(data, b"message published");
+    }
 
-        tokio::join!(dummy1, dummy2);
+    #[tokio::test]
+    async fn test_filter() {
+        let mut handle = PubSub::new();
+        const PAYLOAD: &[u8] = b"this is an event";
+        const PAYLOAD2: &[u8] = b"No :(";
+
+        const KEY: &[u8] = b"aaaaaaaaaaaaaaaaa";
+        const KEY2: &[u8] = b"yas";
+
+        let mut int = handle.subscribe(Event::Log, Some(KEY)).unwrap();
+        let mut int2 = handle.subscribe(Event::Log, Some(KEY2)).unwrap();
+
+
+        handle.publish(Event::Log, KEY2, PAYLOAD2).unwrap();
+        handle.publish(Event::Log, KEY, PAYLOAD).unwrap();
+
+        assert_eq!(int.recv().await.unwrap(), PAYLOAD);
+        assert_eq!(int2.recv().await.unwrap(), PAYLOAD2);
+
+
+
     }
 }
