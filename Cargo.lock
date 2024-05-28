@@ -444,6 +444,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "module-entrypoint"
+version = "0.1.0"
+
+[[package]]
 name = "netscan"
 version = "0.1.0"
 dependencies = [

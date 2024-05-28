@@ -1,5 +1,5 @@
 [workspace]
-members = [ "libraries/entities", "modules/portscan","libraries/pubsub", "libraries/scheduler", "modules/scaninit", "modules/reporting"]
+members = [ "libraries/entities", "modules/portscan","libraries/pubsub", "libraries/scheduler", "modules/scaninit", "modules/reporting", "codegen/module-entrypoint"]
 
 [package]
 name = "netscan"

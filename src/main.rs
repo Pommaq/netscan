@@ -6,7 +6,7 @@ use tokio_util::{sync::CancellationToken, task::TaskTracker};
 
 #[tokio::main]
 async fn main() {
-    pretty_env_logger::init_timed();
+    pretty_env_logger::formatted_timed_builder().parse_env("LOG_LEVEL").init();
     let handle = Arc::new(PubSub::default());
 
     // 10 minute timeout

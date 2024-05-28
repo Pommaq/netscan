@@ -3,6 +3,7 @@ use std::{sync::Arc, time::Duration};
 
 use anyhow::Context;
 use entities::{filter, portscan};
+use log::info;
 use pubsub::interface::{Event, PubSubInterface, Subscriber};
 use tokio::{net::TcpStream, time};
 
@@ -38,7 +39,7 @@ async fn entrypoint<T: PubSubInterface>(
                 Ok(_) => {
                     log::info!("Port {}:{} is open", addr.addr, port);
                     let serialized = entities::serialize(&portscan::Port::new(port))?;
-                    handle.publish(Event::PortOpen, b"tcp", &serialized)?;
+                    handle.publish(Event::PortOpen, b"tcp", &serialized).context(format!("Attempted to mark TCP port {port} as open"))?;
                 }
                 Err(_) => {
                     log::debug!("Port {}:{} is closed", addr.addr, port);
@@ -46,6 +47,6 @@ async fn entrypoint<T: PubSubInterface>(
             }
         }
     }
-
+    info!("Portscan exiting");
     Ok(())
 }

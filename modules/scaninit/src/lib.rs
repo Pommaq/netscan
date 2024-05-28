@@ -8,9 +8,9 @@ use pubsub::interface::{Event, PubSubInterface};
 
 #[derive(Parser)]
 struct Args {
-    // Inclusive first port to scan
+    // /Inclusive first port to scan
     pub start: u16,
-    // Inclusive last port to scan
+    /// Inclusive last port to scan
     pub end: u16,
 }
 
@@ -38,3 +38,12 @@ async fn scaninitiator<T: PubSubInterface>(handle: Arc<T>) -> anyhow::Result<()>
     )?;
     Ok(())
 }
+
+/* 
+Definiera en struct "Entrypoint" som innehåller en funktionspekare samt lista av de events den vill lyssna på samt en den kan publicera.
+Skriv ett attribute macro/derive macro som körs över en funktion. Den läser parametrarna för att lista ut vad för grejer den läser/skriver o bildar instanser av "Entrypoint"
+där varje instans funktionspekare är en wrapper runt den derive-ade funktionen. Wrappern unpackar listan o anropar den definierade funktionen.
+    * Notera att listan av läser/skriver kan inte ges som parameter till definierade grejen.
+
+Skriv en "register" som tar en sekvens av dessa Entrypoint strukter o anropar varje funktionspekare. De får parametern "PubSubInterface" och den interna wrappern kommer registrera/publicera genom den.
+*/
